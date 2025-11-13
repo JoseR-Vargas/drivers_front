@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Formulario de Conductores</title>
+	<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+	<div class="container">
+		<h1>Formulario de Conductores</h1>
+		<form id="formConductor">
+			<div class="form-group">
+				<label for="nombreApellido">Nombre y Apellido del Conductor <span class="required">*</span></label>
+				<input type="text" id="nombreApellido" name="nombreApellido" required>
+			</div>
+
+			<div class="form-group">
+				<label for="patente">Patente del Vehículo <span class="required">*</span></label>
+				<input type="text" id="patente" name="patente" required>
+			</div>
+
+			<div class="form-group">
+				<label for="ruta">Ruta <span class="required">*</span></label>
+				<input type="text" id="ruta" name="ruta" required>
+			</div>
+
+			<div class="form-group">
+				<label for="numeroPaquetes">Número de Paquetes <span class="required">*</span></label>
+				<input type="number" id="numeroPaquetes" name="numeroPaquetes" min="0" required>
+			</div>
+
+			<div class="form-group">
+				<label for="paquetesRecibidos">Paquetes Recibidos <span class="required">*</span></label>
+				<input type="number" id="paquetesRecibidos" name="paquetesRecibidos" min="0" required>
+			</div>
+
+			<div class="form-group">
+				<label for="cantidadParadas">Cantidad de Paradas <span class="required">*</span></label>
+				<input type="number" id="cantidadParadas" name="cantidadParadas" min="0" required>
+			</div>
+
+			<div class="form-group">
+				<label for="paquetesEntregados">Cantidad de Paquetes Entregados</label>
+				<input type="number" id="paquetesEntregados" name="paquetesEntregados" min="0">
+			</div>
+
+			<div class="form-group">
+				<label for="paquetesDevueltos">Paquetes Devueltos</label>
+				<input type="number" id="paquetesDevueltos" name="paquetesDevueltos" min="0">
+			</div>
+
+			<div class="form-group">
+				<label for="observaciones">Observaciones</label>
+				<textarea id="observaciones" name="observaciones" rows="4"></textarea>
+			</div>
+
+			<div class="form-actions">
+				<button type="submit" class="btn-submit">Guardar</button>
+			</div>
+		</form>
+
+		<div id="mensaje" class="mensaje"></div>
+	</div>
+
+	<script src="js/script.js"></script>
+</body>
+</html>
+

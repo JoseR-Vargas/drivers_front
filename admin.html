@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Panel de Administración - Conductores</title>
+	<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+	<div class="container">
+		<h1>Panel de Administración</h1>
+		
+		<div class="controls">
+			<div class="filter-group">
+				<label for="filtroFecha">Filtrar por Fecha:</label>
+				<input type="date" id="filtroFecha" name="filtroFecha">
+				<button type="button" class="btn-filter" id="btnFiltrar">Filtrar</button>
+				<button type="button" class="btn-clear-filter" id="btnLimpiarFiltro">Limpiar Filtro</button>
+			</div>
+			<div class="export-group">
+				<button type="button" class="btn-export" id="btnExportarExcel">Descargar CSV</button>
+			</div>
+		</div>
+
+		<div class="stats">
+			<p>Total de registros: <span id="totalRegistros">0</span></p>
+			<p>Registros mostrados: <span id="registrosMostrados">0</span></p>
+		</div>
+
+		<div class="table-container">
+			<table id="tablaConductores">
+				<thead>
+					<tr>
+						<th>Fecha</th>
+						<th>Nombre y Apellido</th>
+						<th>Patente</th>
+						<th>Ruta</th>
+						<th>N° Paquetes</th>
+						<th>Paquetes Recibidos</th>
+						<th>Cantidad Paradas</th>
+						<th>Paquetes Entregados</th>
+						<th>Paquetes Devueltos</th>
+						<th>Observaciones</th>
+					</tr>
+				</thead>
+				<tbody id="tbodyConductores">
+					<tr>
+						<td colspan="10" class="no-data">No hay datos disponibles</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+
+	<script src="js/admin.js"></script>
+</body>
+</html>
+
