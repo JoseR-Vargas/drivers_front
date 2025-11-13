@@ -1,4 +1,5 @@
-const API_URL = 'http://localhost:3000/drivers';
+// Usar la configuración del archivo config.js
+const API_URL = CONFIG.getDriversUrl();
 const STORAGE_KEY = 'conductores_pendientes';
 
 document.addEventListener('DOMContentLoaded', function() {

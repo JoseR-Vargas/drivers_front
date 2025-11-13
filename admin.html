@@ -5,6 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Panel de Administración - Conductores</title>
 	<link rel="stylesheet" href="css/admin.css">
+	<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 	<div class="container">
@@ -18,7 +19,7 @@
 				<button type="button" class="btn-clear-filter" id="btnLimpiarFiltro">Limpiar Filtro</button>
 			</div>
 			<div class="export-group">
-				<button type="button" class="btn-export" id="btnExportarExcel">Descargar CSV</button>
+				<button type="button" class="btn-export" id="btnExportarExcel">Descargar Excel</button>
 			</div>
 		</div>
 
@@ -41,17 +42,19 @@
 						<th>Paquetes Entregados</th>
 						<th>Paquetes Devueltos</th>
 						<th>Observaciones</th>
+						<th>Acciones</th>
 					</tr>
 				</thead>
 				<tbody id="tbodyConductores">
 					<tr>
-						<td colspan="10" class="no-data">No hay datos disponibles</td>
+						<td colspan="11" class="no-data">No hay datos disponibles</td>
 					</tr>
 				</tbody>
 			</table>
 		</div>
 	</div>
 
+	<script src="js/config.js"></script>
 	<script src="js/admin.js"></script>
 </body>
 </html>

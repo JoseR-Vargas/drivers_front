@@ -1,4 +1,5 @@
-const STORAGE_KEY = 'conductores_pendientes';
+// Usar la configuración del archivo config.js
+const API_URL = CONFIG.getDriversUrl();
 
 document.addEventListener('DOMContentLoaded', function() {
 	const tbody = document.getElementById('tbodyConductores');
@@ -29,62 +30,49 @@ document.addEventListener('DOMContentLoaded', function() {
 		cargarDatos();
 	});
 
-	btnExportarExcel.addEventListener('click', function() {
-		exportarACSV();
+	btnExportarExcel.addEventListener('click', async function() {
+		await exportarAExcel();
 	});
 
-	function obtenerDatosDelStorage() {
+	async function cargarDatos() {
 		try {
-			const datos = localStorage.getItem(STORAGE_KEY);
-			return datos ? JSON.parse(datos) : [];
+			const response = await fetch(API_URL);
+			if (!response.ok) {
+				throw new Error('Error al cargar los datos');
+			}
+			const conductores = await response.json();
+			totalRegistros.textContent = conductores.length;
+			
+			if (fechaFiltro) {
+				await filtrarPorFecha(fechaFiltro);
+			} else {
+				datosFiltrados = conductores;
+				renderizarTabla(conductores);
+			}
 		} catch (error) {
-			console.error('Error al leer localStorage:', error);
-			return [];
+			console.error('Error al cargar datos:', error);
+			mostrarMensajeError();
 		}
 	}
 
-	function cargarDatos() {
-		const conductores = obtenerDatosDelStorage();
-		// Ordenar por fecha descendente (más recientes primero)
-		conductores.sort(function(a, b) {
-			return new Date(b.timestamp) - new Date(a.timestamp);
-		});
-		
-		totalRegistros.textContent = conductores.length;
-		
-		if (fechaFiltro) {
-			filtrarPorFecha(fechaFiltro);
-		} else {
-			datosFiltrados = conductores;
-			renderizarTabla(conductores);
+	async function filtrarPorFecha(fecha) {
+		try {
+			const response = await fetch(`${API_URL}?fecha=${fecha}`);
+			if (!response.ok) {
+				throw new Error('Error al filtrar los datos');
+			}
+			datosFiltrados = await response.json();
+			registrosMostrados.textContent = datosFiltrados.length;
+			renderizarTabla(datosFiltrados);
+		} catch (error) {
+			console.error('Error al filtrar datos:', error);
+			mostrarMensajeError();
 		}
-	}
-
-	function filtrarPorFecha(fecha) {
-		const todosLosDatos = obtenerDatosDelStorage();
-		// Ordenar por fecha descendente (más recientes primero)
-		todosLosDatos.sort(function(a, b) {
-			return new Date(b.timestamp) - new Date(a.timestamp);
-		});
-		
-		const fechaInicio = new Date(fecha);
-		fechaInicio.setHours(0, 0, 0, 0);
-		
-		const fechaFin = new Date(fecha);
-		fechaFin.setHours(23, 59, 59, 999);
-
-		datosFiltrados = todosLosDatos.filter(function(conductor) {
-			const fechaRegistro = new Date(conductor.timestamp);
-			return fechaRegistro >= fechaInicio && fechaRegistro <= fechaFin;
-		});
-
-		registrosMostrados.textContent = datosFiltrados.length;
-		renderizarTabla(datosFiltrados);
 	}
 
 	function renderizarTabla(datos) {
 		if (datos.length === 0) {
-			tbody.innerHTML = '<tr><td colspan="10" class="no-data">No hay datos disponibles</td></tr>';
+			tbody.innerHTML = '<tr><td colspan="11" class="no-data">No hay datos disponibles</td></tr>';
 			registrosMostrados.textContent = '0';
 			return;
 		}
@@ -93,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 		datos.forEach(function(conductor) {
 			const fila = document.createElement('tr');
-			const fecha = new Date(conductor.timestamp);
+			const fecha = new Date(conductor.createdAt || conductor.fechaCreacion);
 			const fechaFormateada = fecha.toLocaleDateString('es-ES', {
 				year: 'numeric',
 				month: '2-digit',
@@ -113,9 +101,22 @@ document.addEventListener('DOMContentLoaded', function() {
 				<td>${conductor.paquetesEntregados || '-'}</td>
 				<td>${conductor.paquetesDevueltos || '-'}</td>
 				<td>${conductor.observaciones || '-'}</td>
+				<td>
+					<button class="btn-delete" data-id="${conductor._id}" data-nombre="${(conductor.nombreApellido || 'este registro').replace(/"/g, '&quot;')}">
+						Eliminar
+					</button>
+				</td>
 			`;
 
 			tbody.appendChild(fila);
+			
+			// Agregar event listener al botón de eliminar
+			const btnDelete = fila.querySelector('.btn-delete');
+			btnDelete.addEventListener('click', function() {
+				const id = this.getAttribute('data-id');
+				const nombre = this.getAttribute('data-nombre');
+				eliminarRegistro(id, nombre);
+			});
 		});
 
 		if (!fechaFiltro) {
@@ -123,12 +124,16 @@ document.addEventListener('DOMContentLoaded', function() {
 		}
 	}
 
-	function exportarACSV() {
+	async function exportarAExcel() {
 		try {
 			let datosParaExportar = datosFiltrados;
 			
 			if (!fechaFiltro && datosFiltrados.length === 0) {
-				datosParaExportar = obtenerDatosDelStorage();
+				const response = await fetch(API_URL);
+				if (!response.ok) {
+					throw new Error('Error al obtener los datos');
+				}
+				datosParaExportar = await response.json();
 			}
 
 			if (datosParaExportar.length === 0) {
@@ -136,28 +141,8 @@ document.addEventListener('DOMContentLoaded', function() {
 				return;
 			}
 
-			// Ordenar por fecha descendente (más recientes primero)
-			datosParaExportar.sort(function(a, b) {
-				return new Date(b.timestamp) - new Date(a.timestamp);
-			});
-
-			// Encabezados del CSV
-			const encabezados = [
-				'Fecha',
-				'Nombre y Apellido',
-				'Patente',
-				'Ruta',
-				'Número de Paquetes',
-				'Paquetes Recibidos',
-				'Cantidad de Paradas',
-				'Paquetes Entregados',
-				'Paquetes Devueltos',
-				'Observaciones'
-			];
-
-			// Convertir datos a filas CSV
-			const filas = datosParaExportar.map(function(conductor) {
-				const fecha = new Date(conductor.timestamp);
+			const datosExcel = datosParaExportar.map(function(conductor) {
+				const fecha = new Date(conductor.createdAt || conductor.fechaCreacion);
 				const fechaFormateada = fecha.toLocaleDateString('es-ES', {
 					year: 'numeric',
 					month: '2-digit',
@@ -166,61 +151,63 @@ document.addEventListener('DOMContentLoaded', function() {
 					minute: '2-digit'
 				});
 
-				return [
-					fechaFormateada,
-					conductor.nombreApellido || '',
-					conductor.patente || '',
-					conductor.ruta || '',
-					conductor.numeroPaquetes || '',
-					conductor.paquetesRecibidos || '',
-					conductor.cantidadParadas || '',
-					conductor.paquetesEntregados || '',
-					conductor.paquetesDevueltos || '',
-					(conductor.observaciones || '').replace(/"/g, '""') // Escapar comillas dobles
-				];
+				return {
+					'Fecha': fechaFormateada,
+					'Nombre y Apellido': conductor.nombreApellido || '',
+					'Patente': conductor.patente || '',
+					'Ruta': conductor.ruta || '',
+					'Número de Paquetes': conductor.numeroPaquetes || '',
+					'Paquetes Recibidos': conductor.paquetesRecibidos || '',
+					'Cantidad de Paradas': conductor.cantidadParadas || '',
+					'Paquetes Entregados': conductor.paquetesEntregados || '',
+					'Paquetes Devueltos': conductor.paquetesDevueltos || '',
+					'Observaciones': conductor.observaciones || ''
+				};
 			});
 
-			// Función para escapar valores CSV
-			function escaparCSV(valor) {
-				if (valor === null || valor === undefined) {
-					return '';
-				}
-				const string = String(valor);
-				if (string.includes(',') || string.includes('"') || string.includes('\n')) {
-					return `"${string.replace(/"/g, '""')}"`;
-				}
-				return string;
-			}
-
-			// Construir contenido CSV
-			const contenidoCSV = [
-				encabezados.map(escaparCSV).join(','),
-				...filas.map(function(fila) {
-					return fila.map(escaparCSV).join(',');
-				})
-			].join('\n');
-
-			// Crear blob y descargar
-			const blob = new Blob(['\ufeff' + contenidoCSV], { type: 'text/csv;charset=utf-8;' }); // BOM para Excel
-			const link = document.createElement('a');
-			const url = URL.createObjectURL(blob);
+			const ws = XLSX.utils.json_to_sheet(datosExcel);
+			const wb = XLSX.utils.book_new();
+			XLSX.utils.book_append_sheet(wb, ws, 'Conductores');
 
 			const fechaActual = new Date().toISOString().split('T')[0];
 			const nombreArchivo = fechaFiltro 
-				? `conductores_${fechaFiltro}.csv` 
-				: `conductores_${fechaActual}.csv`;
+				? `conductores_${fechaFiltro}.xlsx` 
+				: `conductores_${fechaActual}.xlsx`;
 
-			link.setAttribute('href', url);
-			link.setAttribute('download', nombreArchivo);
-			link.style.visibility = 'hidden';
-			document.body.appendChild(link);
-			link.click();
-			document.body.removeChild(link);
-
-			console.log('CSV exportado correctamente:', nombreArchivo);
+			XLSX.writeFile(wb, nombreArchivo);
+			console.log('Excel exportado correctamente:', nombreArchivo);
 		} catch (error) {
-			console.error('Error al exportar a CSV:', error);
-			alert('Error al exportar el archivo CSV');
+			console.error('Error al exportar a Excel:', error);
+			alert('Error al exportar el archivo Excel');
+		}
+	}
+
+	function mostrarMensajeError() {
+		tbody.innerHTML = '<tr><td colspan="11" class="no-data">Error al cargar los datos</td></tr>';
+	}
+
+	async function eliminarRegistro(id, nombre) {
+		if (!confirm(`¿Está seguro de que desea eliminar el registro de ${nombre}?`)) {
+			return;
+		}
+
+		try {
+			const response = await fetch(`${API_URL}/${id}`, {
+				method: 'DELETE'
+			});
+
+			if (response.ok) {
+				console.log('Registro eliminado correctamente');
+				// Recargar los datos después de eliminar
+				await cargarDatos();
+			} else {
+				const errorData = await response.json().catch(() => ({ message: 'Error desconocido' }));
+				console.error('Error al eliminar:', response.status, errorData);
+				alert(`Error al eliminar el registro: ${errorData.message || 'Error desconocido'}`);
+			}
+		} catch (error) {
+			console.error('Error al eliminar registro:', error);
+			alert('Error al conectar con el servidor');
 		}
 	}
 });
