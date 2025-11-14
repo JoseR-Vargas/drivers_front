@@ -1,6 +1,12 @@
 // Usar la configuración del archivo config.js
 const API_URL = CONFIG.getDriversUrl();
 
+// Log de configuración al cargar
+console.log('🌍 Entorno:', CONFIG.isProduction() ? 'PRODUCCIÓN' : 'LOCAL');
+console.log('🔗 Backend URL:', CONFIG.getBackendUrl());
+console.log('📍 Drivers URL:', API_URL);
+console.log('🌐 Hostname:', window.location.hostname);
+
 document.addEventListener('DOMContentLoaded', function() {
 	const tbody = document.getElementById('tbodyConductores');
 	const filtroFecha = document.getElementById('filtroFecha');
@@ -13,6 +19,9 @@ document.addEventListener('DOMContentLoaded', function() {
 	let datosFiltrados = [];
 	let fechaFiltro = null;
 
+	// Mostrar mensaje de carga inicial
+	tbody.innerHTML = '<tr><td colspan="11" class="no-data">🔄 Cargando datos...</td></tr>';
+	
 	cargarDatos();
 
 	btnFiltrar.addEventListener('click', function() {
@@ -36,11 +45,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
 	async function cargarDatos() {
 		try {
+			console.log('🔄 Cargando datos desde:', API_URL);
 			const response = await fetch(API_URL);
+			
+			console.log('📡 Response status:', response.status);
+			
 			if (!response.ok) {
-				throw new Error('Error al cargar los datos');
+				const errorText = await response.text();
+				console.error('❌ Error response:', errorText);
+				throw new Error(`Error ${response.status}: ${errorText}`);
 			}
+			
 			const conductores = await response.json();
+			console.log('✅ Datos cargados:', conductores.length, 'registros');
+			
 			totalRegistros.textContent = conductores.length;
 			
 			if (fechaFiltro) {
@@ -50,8 +68,8 @@ document.addEventListener('DOMContentLoaded', function() {
 				renderizarTabla(conductores);
 			}
 		} catch (error) {
-			console.error('Error al cargar datos:', error);
-			mostrarMensajeError();
+			console.error('❌ Error al cargar datos:', error);
+			mostrarMensajeError(error.message);
 		}
 	}
 
@@ -182,8 +200,14 @@ document.addEventListener('DOMContentLoaded', function() {
 		}
 	}
 
-	function mostrarMensajeError() {
-		tbody.innerHTML = '<tr><td colspan="11" class="no-data">Error al cargar los datos</td></tr>';
+	function mostrarMensajeError(mensaje = 'Error al cargar los datos') {
+		tbody.innerHTML = `<tr><td colspan="11" class="no-data">
+			⚠️ ${mensaje}<br>
+			<small style="margin-top: 10px; display: block;">
+				API: ${API_URL}<br>
+				Verifica la consola del navegador para más detalles.
+			</small>
+		</td></tr>`;
 	}
 
 	async function eliminarRegistro(id, nombre) {
